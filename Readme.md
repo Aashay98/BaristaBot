@@ -65,3 +65,40 @@ docker build -t baristabot .
 docker run -p 8501:8501 -e GOOGLE_API_KEY=your_key_here baristabot
 ```
 Visit http://localhost:8501 in browser.
+
+
+## ☁️ Deploy on Streamlit Cloud
+1. Push code to GitHub
+
+2. Go to streamlit.io/cloud
+
+3. Connect your repo
+
+4. Set GOOGLE_API_KEY in Secrets Manager
+
+5. Deploy!
+
+## 🧠 Powered By
+LangGraph
+
+LangChain
+
+Google Gemini API
+
+Streamlit
+
+Docker
+
+## 💡 Future Enhancements
+✅ Dropdown-based UI for drinks & modifiers
+
+✅ Admin dashboard to view & manage orders
+
+✅ Persistent database storage (e.g., Redis or SQLite)
+
+✅ Multimodal order input (image of chalkboard menu)
+
+## 🤝 Contributing
+Pull requests welcome. For major changes, please open an issue first.
+
+

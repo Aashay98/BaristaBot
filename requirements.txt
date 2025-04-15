@@ -1,0 +1,7 @@
+streamlit
+langchain
+langgraph
+langchain-google-genai
+kaggle
+tqdm
+pydantic
