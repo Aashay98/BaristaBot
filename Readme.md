@@ -4,12 +4,6 @@ BaristaBot is an interactive AI assistant built using LangGraph, LangChain, and 
 
 ---
 
-## 🌐 Live Demo (Streamlit Cloud)
-> [Click to try the demo](https://your-streamlit-link.streamlit.app)  
-*(Update this with your deployed URL)*
-
----
-
 ## 📦 Features
 
 - 🔄 **Session-based order tracking**
