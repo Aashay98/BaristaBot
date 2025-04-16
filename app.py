@@ -1,3 +1,5 @@
+import os
+from reciept import generate_pdf
 import streamlit as st
 from agent import graph_with_order_tools
 from langchain_core.messages import HumanMessage
@@ -41,5 +43,25 @@ if user_input:
                 "session_id": st.session_state.session_id,
             }
         )
+        if state.get("finished", False):
+            st.success("✅ Order placed! Your order is being prepared.")
+
+            order_items = state.get("order", [])
+            eta = next((msg.content for msg in state["messages"] if "ETA" in str(msg.content)), "N/A")
+
+            pdf_path = generate_pdf(order_items, eta, st.session_state.session_id)
+
+            with open(pdf_path, "rb") as f:
+                st.download_button(
+                    label="📄 Download Receipt (PDF)",
+                    data=f,
+                    file_name=os.path.basename(pdf_path),
+                    mime="application/pdf"
+                )
+
+            if st.button("Start New Order"):
+                st.session_state.messages = []
+                st.session_state.session_id = str(uuid.uuid4())
+                st.rerun()
         st.session_state.messages.extend(state["messages"])
         st.rerun()
