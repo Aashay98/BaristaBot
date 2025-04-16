@@ -1,6 +1,5 @@
 import streamlit as st
-from langgraph.graph import StateGraph
-from barista_bot import graph_with_order_tools  # import your compiled graph
+from agent import graph_with_order_tools
 from langchain_core.messages import HumanMessage
 import uuid
 
@@ -23,16 +22,24 @@ user_input = st.chat_input("Place your order or ask about the menu...")
 # Display message history
 for msg in st.session_state.messages:
     role = "👤 You" if msg.role == "user" else "🤖 BaristaBot"
-    st.markdown(f"**{role}:** {msg.content}")
+    if role == "👤 You":
+        st.chat_message("user").markdown(msg.content)
+    elif role == "🤖 BaristaBot":
+        st.chat_message("assistant").markdown(msg.content)
+    else:  # Tool
+        with st.expander("🛠 Tool Response"):
+            st.markdown(msg.content)
 
 if user_input:
     st.session_state.messages.append(HumanMessage(content=user_input))
     with st.spinner("Thinking..."):
-        state = graph_with_order_tools.invoke({
-            "messages": st.session_state.messages,
-            "order": [],
-            "finished": False,
-            "session_id": st.session_state.session_id,
-        })
+        state = graph_with_order_tools.invoke(
+            {
+                "messages": st.session_state.messages,
+                "order": [],
+                "finished": False,
+                "session_id": st.session_state.session_id,
+            }
+        )
         st.session_state.messages.extend(state["messages"])
         st.rerun()

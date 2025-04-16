@@ -1,19 +1,28 @@
 import os
-from kaggle_secrets import UserSecretsClient
-from typing import Annotated, Literal
-from typing_extensions import TypedDict
-from langgraph.graph.message import add_messages
-from langgraph.graph import StateGraph, START, END
-from langchain_google_genai import ChatGoogleGenerativeAI
-from pprint import pprint
-from langgraph.prebuilt import ToolNode
-from langchain_core.messages.ai import AIMessage
 from random import randint
+from typing import Annotated, Literal
+
+from kaggle_secrets import UserSecretsClient
+from langchain_core.messages.ai import AIMessage
 from langchain_core.messages.tool import ToolMessage
-from tools import add_to_order, clear_order, confirm_order, get_menu, get_order, place_order
+from langgraph.graph import END, START, StateGraph
+from langgraph.graph.message import add_messages
+from langgraph.prebuilt import ToolNode
+from typing_extensions import TypedDict
+
+from bot_config import *
+from tools import (
+    add_to_order,
+    clear_order,
+    confirm_order,
+    get_menu,
+    get_order,
+    place_order,
+)
 
 GOOGLE_API_KEY = UserSecretsClient().get_secret("GOOGLE_API_KEY")
 os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
+
 
 class OrderState(TypedDict):
     """State representing the customer's order conversation."""
@@ -29,44 +38,6 @@ class OrderState(TypedDict):
 
     # Flag indicating that the order is placed and completed.
     finished: bool
-
-# The system instruction defines how the chatbot is expected to behave and includes
-# rules for when to call different functions, as well as rules for the conversation, such
-# as tone and what is permitted for discussion.
-BARISTABOT_SYSINT = (
-    "system",  # 'system' indicates the message is a system instruction.
-    "You are a BaristaBot, an interactive cafe ordering system. A human will talk to you about the "
-    "available products you have and you will answer any questions about menu items (and only about "
-    "menu items - no off-topic discussion, but you can chat about the products and their history). "
-    "The customer will place an order for 1 or more items from the menu, which you will structure "
-    "and send to the ordering system after confirming the order with the human. "
-    "\n\n"
-    "Add items to the customer's order with add_to_order, and reset the order with clear_order. "
-    "To see the contents of the order so far, call get_order (this is shown to you, not the user) "
-    "Always confirm_order with the user (double-check) before calling place_order. Calling confirm_order will "
-    "display the order items to the user and returns their response to seeing the list. Their response may contain modifications. "
-    "Always verify and respond with drink and modifier names from the MENU before adding them to the order. "
-    "If you are unsure a drink or modifier matches those on the MENU, ask a question to clarify or redirect. "
-    "You only have the modifiers listed on the menu. "
-    "Once the customer has finished ordering items, Call confirm_order to ensure it is correct then make "
-    "any necessary updates and then call place_order. Once place_order has returned, thank the user and "
-    "say goodbye!"
-    "\n\n"
-    "If any of the tools are unavailable, you can break the fourth wall and tell the user that "
-    "they have not implemented them yet and should keep reading to do so.",
-)
-
-# This is the message with which the system opens the conversation.
-WELCOME_MSG = "Welcome to the BaristaBot cafe. Type `q` to quit. How may I serve you today?"
-
-# Try using different models. The Gemini 2.0 flash model is highly
-# capable, great with tools, and has a generous free tier. If you
-# try the older 1.5 models, note that the `pro` models are better at
-# complex multi-tool cases like this, but the `flash` models are
-# faster and have more free quota.
-# Check out the features and quota differences here:
-#  - https://ai.google.dev/gemini-api/docs/models/gemini
-llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
 
 def chatbot(state: OrderState) -> OrderState:
@@ -102,13 +73,15 @@ def chatbot_with_welcome_msg(state: OrderState) -> OrderState:
 
     return state | {"messages": [new_output]}
 
+
 def maybe_exit_human_node(state: OrderState) -> Literal["chatbot", "__end__"]:
     """Route to the chatbot, unless it looks like the user is exiting."""
     if state.get("finished", False):
         return END
     else:
         return "chatbot"
-    
+
+
 def maybe_route_to_tools(state: OrderState) -> Literal["tools", "human"]:
     """Route between human or tool nodes, depending if a tool call is made."""
     if not (msgs := state.get("messages", [])):
@@ -123,16 +96,24 @@ def maybe_route_to_tools(state: OrderState) -> Literal["tools", "human"]:
     else:
         return "human"
 
+
 def chatbot_with_tools(state: OrderState) -> OrderState:
     defaults = {"order": [], "finished": False}
 
     messages = [BARISTABOT_SYSINT] + state.get("messages", [])
     if state.get("finished", False):
-        farewell = AIMessage(content="Thank you for visiting BaristaBot. Have a great day!")
+        farewell = AIMessage(
+            content="Thank you for visiting BaristaBot. Have a great day!"
+        )
         return defaults | state | {"messages": [farewell]}
 
-    new_output = llm_with_tools.invoke(messages) if state["messages"] else AIMessage(content=WELCOME_MSG)
+    new_output = (
+        llm_with_tools.invoke(messages)
+        if state["messages"]
+        else AIMessage(content=WELCOME_MSG)
+    )
     return defaults | state | {"messages": [new_output]}
+
 
 def order_node(state: OrderState) -> OrderState:
     """The ordering node. This is where the order state is manipulated."""
@@ -204,6 +185,7 @@ def order_node(state: OrderState) -> OrderState:
 
     return {"messages": outbound_msgs, "order": order, "finished": order_placed}
 
+
 auto_tools = [get_menu]
 tool_node = ToolNode(auto_tools)
 
@@ -212,7 +194,6 @@ order_tools = [add_to_order, confirm_order, get_order, clear_order, place_order]
 
 # The LLM needs to know about all of the tools, so specify everything here.
 llm_with_tools = llm.bind_tools(auto_tools + order_tools)
-
 
 graph_builder = StateGraph(OrderState)
 
