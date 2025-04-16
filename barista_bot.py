@@ -233,12 +233,3 @@ graph_builder.add_edge("ordering", "chatbot")
 
 graph_builder.add_edge(START, "chatbot")
 graph_with_order_tools = graph_builder.compile()
-
-config = {"recursion_limit": 100}
-
-user_msg = "Hello, what can you do?"
-state = graph_with_order_tools.invoke({"messages": [user_msg]}, config)
-
-for msg in state["messages"]:
-    print(f"{type(msg).__name__}: {msg.content}")
-

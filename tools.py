@@ -1,8 +1,49 @@
 from langchain_core.tools import tool
 from collections.abc import Iterable
+from typing import Optional
 
-# Internal "in-memory" order storage (would be a DB or session in a real app)
-_current_order = []
+# Simulated per-user session storage
+_sessions = {}
+
+def _get_user_order(session_id: str) -> list:
+    return _sessions.setdefault(session_id, [])
+
+@tool
+def add_to_order(drink: str, modifiers: Iterable[str], session_id: str) -> str:
+    """Add a drink with modifiers to user's session order."""
+    item = f"{drink} ({', '.join(modifiers) if modifiers else 'no modifiers'})"
+    _get_user_order(session_id).append(item)
+    return f"Added to your order: {item}"
+
+@tool
+def get_order(session_id: str) -> str:
+    """Get current order for session."""
+    order = _get_user_order(session_id)
+    return "\n".join(order) if order else "(No items in your order)"
+
+@tool
+def confirm_order(session_id: str) -> str:
+    """Show order summary for confirmation."""
+    order = _get_user_order(session_id)
+    if not order:
+        return "Your order is empty."
+    return "Here’s your order:\n" + "\n".join(f"- {item}" for item in order)
+
+@tool
+def clear_order(session_id: str) -> str:
+    """Clear the user's order."""
+    _sessions[session_id] = []
+    return "Order cleared."
+
+@tool
+def place_order(session_id: str) -> int:
+    """Place order and return ETA in minutes."""
+    from random import randint
+    order = _get_user_order(session_id)
+    if not order:
+        return 0
+    _sessions[session_id] = []  # Clear after placing
+    return randint(2, 6)
 
 @tool
 def get_menu() -> str:
@@ -47,44 +88,3 @@ def get_menu() -> str:
     'Dirty' = add espresso to non-coffee drinks (e.g., Dirty Chai Latte).
     Soy milk is out of stock today.
     """
-
-@tool
-def add_to_order(drink: str, modifiers: Iterable[str]) -> str:
-    """Adds the specified drink to the customer's order, including any modifiers."""
-    modifier_str = ", ".join(modifiers) if modifiers else "no modifiers"
-    item = f"{drink} ({modifier_str})"
-    _current_order.append(item)
-    return f"Added to your order: {item}"
-
-@tool
-def confirm_order() -> str:
-    """Asks the customer if the order is correct."""
-    if not _current_order:
-        return "You currently have no items in your order."
-
-    order_text = "\n".join(f"- {item}" for item in _current_order)
-    return f"Here’s your current order:\n{order_text}\nIs this correct?"
-
-@tool
-def get_order() -> str:
-    """Returns the user's order so far."""
-    if not _current_order:
-        return "(No order yet)"
-    return "\n".join(_current_order)
-
-@tool
-def clear_order():
-    """Clears the user's order."""
-    _current_order.clear()
-    return "Order has been cleared."
-
-@tool
-def place_order() -> int:
-    """Finalizes the order and returns the estimated preparation time."""
-    if not _current_order:
-        return 0  # Nothing to prepare
-
-    from random import randint
-    eta = randint(2, 6)
-    _current_order.clear()  # Reset after placing
-    return eta
