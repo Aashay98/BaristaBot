@@ -4,12 +4,6 @@ BaristaBot is an interactive AI assistant built using LangGraph, LangChain, and 
 
 ---
 
-## 🌐 Live Demo (Streamlit Cloud)
-> [Click to try the demo](https://your-streamlit-link.streamlit.app)  
-*(Update this with your deployed URL)*
-
----
-
 ## 📦 Features
 
 - 🔄 **Session-based order tracking**
@@ -24,7 +18,13 @@ BaristaBot is an interactive AI assistant built using LangGraph, LangChain, and 
 
 ## 📁 Project Structure
 
-baristabot/ ├── app.py # Streamlit UI ├── tools.py # All tool functions (get_menu, add_to_order, etc.) ├── graph.py # LangGraph logic, state machine definition ├── requirements.txt # Python dependencies ├── Dockerfile # Docker setup ├── .dockerignore └── README.md
+baristabot/ 
+├── app.py # Streamlit UI 
+├── tools.py # All tool functions (get_menu, add_to_order, etc.) 
+├── graph.py # LangGraph logic, state machine definition 
+├── requirements.txt # Python dependencies 
+├── Dockerfile # Docker setup 
+├── .dockerignore └── README.md
 
 ---
 
